@@ -1,0 +1,13 @@
+[package]
+name = "random_chooser_drop"
+version = "0.1.0"
+authors = ["Brooks Patton <brooks@brookzerker.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ggez = "0.5.1"
+serde_json = "1.0.64"
+eyre = "0.6.5"
+serde = { version = "1.0.125", features = ["derive"] }
