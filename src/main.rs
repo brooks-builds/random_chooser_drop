@@ -17,7 +17,7 @@ fn main() -> Result<()> {
         .window_setup(window_setup)
         .build()?;
     let mut main_state = MainState::new(config)?;
-    dbg!(&main_state);
+    main_state.setup();
     event::run(&mut context, &mut event_loop, &mut main_state)?;
     Ok(())
 }

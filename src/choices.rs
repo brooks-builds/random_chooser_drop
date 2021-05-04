@@ -14,7 +14,7 @@ pub struct Choice {
         with = "crate::helpers::serde_color",
         default = "crate::helpers::serde_default_color::serde_default_color"
     )]
-    color: Color,
+    pub color: Color,
 }
 
 pub fn load_choices(config: &Config) -> Result<Vec<Choice>> {
