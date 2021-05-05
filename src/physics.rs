@@ -1,6 +1,6 @@
 use nalgebra::Isometry2;
 use rapier2d::dynamics::{
-    CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodySet,
+    CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
 };
 use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase};
 use rapier2d::pipeline::PhysicsPipeline;
@@ -87,5 +87,20 @@ impl Physics {
             &hooks,
             &event_handlers,
         );
+    }
+
+    pub fn remove(&mut self, handle: RigidBodyHandle) {
+        self.bodies
+            .remove(handle, &mut self.colliders, &mut self.joints);
+    }
+
+    pub fn get_rigid_body_handle(&self, id: u128) -> Option<RigidBodyHandle> {
+        for (handle, body) in self.bodies.iter() {
+            if body.user_data == id {
+                return Some(handle);
+            }
+        }
+
+        None
     }
 }

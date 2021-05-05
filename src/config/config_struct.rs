@@ -17,4 +17,8 @@ pub struct Config {
     pub choice_start_x_max: f32,
     pub choice_start_y_min: f32,
     pub choice_start_y_max: f32,
+    pub floor_position_y: f32,
+    pub floor_height: f32,
+    #[serde(with = "crate::helpers::serde_color")]
+    pub floor_color: Color,
 }

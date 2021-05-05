@@ -11,5 +11,8 @@
     "choice_start_x_min": 0.0,
     "choice_start_x_max": 1280.0,
     "choice_start_y_min": -50.0,
-    "choice_start_y_max": -10.0
+    "choice_start_y_max": -10.0,
+    "floor_position_y": 50.0,
+    "floor_height": 5.0,
+    "floor_color": [0, 0, 0]
 }
