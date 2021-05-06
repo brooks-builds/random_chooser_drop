@@ -49,6 +49,7 @@ impl DrawData {
 #[derive(Clone, Copy)]
 pub enum DataType {
     Ball,
-    Floor,
+    Nail,
+    Wall,
     Unknown,
 }

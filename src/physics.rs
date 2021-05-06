@@ -72,6 +72,20 @@ impl Physics {
         id
     }
 
+    pub fn insert_nail(&mut self, position: Vector2, radius: f32) -> u128 {
+        let id = self.last_used_id + 1;
+        self.last_used_id = id;
+        let nail = RigidBodyBuilder::new_static()
+            .position(Isometry2::new(position.to_nalgebra(), 0.0))
+            .user_data(id)
+            .build();
+        let handle = self.bodies.insert(nail);
+        let collider = ColliderBuilder::ball(radius).user_data(id).build();
+        self.colliders.insert(collider, handle, &mut self.bodies);
+
+        id
+    }
+
     pub fn update(&mut self) {
         let hooks = ();
         let event_handlers = ();

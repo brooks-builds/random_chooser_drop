@@ -13,12 +13,16 @@ pub struct Config {
     pub gravity: f32,
     pub choice_radius: f32,
     pub bounciness: f32,
-    pub choice_start_x_min: f32,
-    pub choice_start_x_max: f32,
-    pub choice_start_y_min: f32,
-    pub choice_start_y_max: f32,
     pub floor_position_y: f32,
     pub floor_height: f32,
     #[serde(with = "crate::helpers::serde_color")]
     pub floor_color: Color,
+    pub nails_in_row: u8,
+    pub rows_of_nails: u8,
+    pub nail_radius: f32,
+    #[serde(with = "crate::helpers::serde_color")]
+    pub nail_color: Color,
+    pub wall_width: f32,
+    #[serde(with = "crate::helpers::serde_color")]
+    pub wall_color: Color,
 }
