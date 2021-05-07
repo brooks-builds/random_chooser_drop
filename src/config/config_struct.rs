@@ -25,4 +25,7 @@ pub struct Config {
     pub wall_width: f32,
     #[serde(with = "crate::helpers::serde_color")]
     pub wall_color: Color,
+    pub collector_offset_y: f32,
+    pub collector_rotation: f32,
+    pub collector_rotation_offset: f32,
 }

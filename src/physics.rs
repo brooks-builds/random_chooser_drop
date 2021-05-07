@@ -63,7 +63,33 @@ impl Physics {
             .user_data(id)
             .build();
         let handle = self.bodies.insert(wall);
+        let mut collider = ColliderBuilder::cuboid(width / 2.0, height / 2.0)
+            .user_data(id)
+            .build();
+        self.colliders.insert(collider, handle, &mut self.bodies);
+
+        self.last_used_id = id;
+        id
+    }
+
+    pub fn insert_rotated_wall(
+        &mut self,
+        position: Vector2,
+        width: f32,
+        height: f32,
+        rotation: f32,
+        height_offset: f32,
+    ) -> u128 {
+        let id = self.last_used_id + 1;
+        let position = Isometry2::new(position.to_nalgebra(), 0.0);
+        let wall = RigidBodyBuilder::new_static()
+            .position(position)
+            .user_data(id)
+            .build();
+        let handle = self.bodies.insert(wall);
         let collider = ColliderBuilder::cuboid(width / 2.0, height / 2.0)
+            .translation(0.0, -(height / 2.0 + height_offset))
+            .rotation(rotation)
             .user_data(id)
             .build();
         self.colliders.insert(collider, handle, &mut self.bodies);

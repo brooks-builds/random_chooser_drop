@@ -16,5 +16,8 @@
     "nail_radius": 2.0,
     "nail_color": [10, 10, 10],
     "wall_width": 15.0,
-    "wall_color": [0, 0, 0]
+    "wall_color": [0, 0, 0],
+    "collector_offset_y": 25.0,
+    "collector_rotation": 0.02,
+    "collector_rotation_offset": 25.0
 }

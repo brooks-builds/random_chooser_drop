@@ -6,6 +6,7 @@ pub struct DrawData {
     colors: HashMap<u128, Color>,
     types: HashMap<u128, DataType>,
     rectangles: HashMap<u128, Rect>,
+    rotations: HashMap<u128, f32>,
 }
 
 impl DrawData {
@@ -14,6 +15,7 @@ impl DrawData {
             colors: HashMap::new(),
             types: HashMap::new(),
             rectangles: HashMap::new(),
+            rotations: HashMap::new(),
         }
     }
 
@@ -27,6 +29,10 @@ impl DrawData {
 
     pub fn insert_rectangle(&mut self, id: u128, rect: Rect) {
         self.rectangles.insert(id, rect);
+    }
+
+    pub fn insert_rotation(&mut self, id: u128, rotation: f32) {
+        self.rotations.insert(id, rotation);
     }
 
     pub fn get_color(&mut self, id: u128) -> Color {
@@ -44,11 +50,16 @@ impl DrawData {
     pub fn get_rectangle(&self, id: u128) -> Rect {
         *self.rectangles.get(&id).unwrap()
     }
+
+    pub fn get_rotation(&self, id: u128) -> f32 {
+        *self.rotations.get(&id).unwrap()
+    }
 }
 
 #[derive(Clone, Copy)]
 pub enum DataType {
     Ball,
+    Collector,
     Nail,
     Wall,
     Unknown,

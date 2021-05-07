@@ -42,8 +42,9 @@ impl MainState {
     pub fn setup(&mut self) {
         self.create_choice_balls();
         self.insert_floor();
-        self.create_nails();
+        // self.create_nails();
         self.create_walls();
+        self.create_left_collector();
     }
 
     fn create_choice_balls(&mut self) {
@@ -148,6 +149,34 @@ impl MainState {
         self.draw_data
             .insert_color(right_id, self.config.wall_color);
     }
+
+    fn create_left_collector(&mut self) {
+        let position = Vector2::new(
+            self.config.width / 4.0,
+            self.config.height - self.config.collector_offset_y,
+        );
+        let width = self.config.width / 2.0;
+        let height = self.config.wall_width;
+        let rotation = self.config.collector_rotation;
+        let draw_type = DataType::Collector;
+        let id = self.physics.insert_rotated_wall(
+            position,
+            width,
+            height,
+            rotation,
+            -self.config.collector_rotation_offset,
+        );
+        let draw_rect = Rect::new(
+            0.0,
+            self.config.height - self.config.collector_offset_y,
+            width + self.config.collector_rotation_offset,
+            height,
+        );
+
+        self.draw_data.insert_rectangle(id, draw_rect);
+        self.draw_data.insert_rotation(id, rotation);
+        self.draw_data.insert_type(id, draw_type);
+    }
 }
 
 impl EventHandler for MainState {
@@ -194,6 +223,14 @@ impl EventHandler for MainState {
                         1.0,
                         self.config.nail_color,
                     );
+                }
+                DataType::Collector => {
+                    let rect = self.draw_data.get_rectangle(id);
+                    let rotation = self.draw_data.get_rotation(id);
+                    let mesh = MeshBuilder::new()
+                        .rectangle(DrawMode::fill(), rect, self.config.wall_color)
+                        .build(context)?;
+                    graphics::draw(context, &mesh, DrawParam::new().rotation(rotation))?;
                 }
                 DataType::Unknown => {}
             }
