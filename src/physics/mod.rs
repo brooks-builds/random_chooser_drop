@@ -6,7 +6,12 @@ use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase};
 use rapier2d::pipeline::PhysicsPipeline;
 
 use crate::config::config_struct::Config;
+use crate::event_manager::EventManager;
 use crate::helpers::vector2::Vector2;
+
+use self::event_handler::PhysicsEventHandler;
+
+pub mod event_handler;
 
 pub struct Physics {
     pipeline: PhysicsPipeline,
@@ -19,10 +24,11 @@ pub struct Physics {
     joints: JointSet,
     ccd_solver: CCDSolver,
     last_used_id: u128,
+    event_handler: PhysicsEventHandler,
 }
 
 impl Physics {
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: &Config, event_manager: &mut EventManager) -> Self {
         Self {
             pipeline: PhysicsPipeline::new(),
             gravity: Vector2::new(0.0, config.gravity),
@@ -34,6 +40,7 @@ impl Physics {
             joints: JointSet::new(),
             ccd_solver: CCDSolver::new(),
             last_used_id: 0,
+            event_handler: PhysicsEventHandler::new(event_manager),
         }
     }
 
@@ -63,7 +70,7 @@ impl Physics {
             .user_data(id)
             .build();
         let handle = self.bodies.insert(wall);
-        let mut collider = ColliderBuilder::cuboid(width / 2.0, height / 2.0)
+        let collider = ColliderBuilder::cuboid(width / 2.0, height / 2.0)
             .user_data(id)
             .build();
         self.colliders.insert(collider, handle, &mut self.bodies);
@@ -112,9 +119,27 @@ impl Physics {
         id
     }
 
+    pub fn insert_sensor(&mut self, position: Vector2, width: f32, height: f32) -> u128 {
+        let id = self.last_used_id + 1;
+        let body = RigidBodyBuilder::new_static()
+            .position(Isometry2::new(position.to_nalgebra(), 0.0))
+            .user_data(id)
+            .build();
+        let handle = self.bodies.insert(body);
+        let collider = ColliderBuilder::cuboid(width / 2.0, height / 2.0)
+            .sensor(true)
+            .user_data(id)
+            .build();
+
+        self.colliders.insert(collider, handle, &mut self.bodies);
+
+        self.last_used_id += 1;
+        id
+    }
+
     pub fn update(&mut self) {
         let hooks = ();
-        let event_handlers = ();
+
         self.pipeline.step(
             self.gravity.get_nalgebra(),
             &self.integration_parameters,
@@ -125,7 +150,7 @@ impl Physics {
             &mut self.joints,
             &mut self.ccd_solver,
             &hooks,
-            &event_handlers,
+            &self.event_handler,
         );
     }
 

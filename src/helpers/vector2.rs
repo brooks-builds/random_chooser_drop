@@ -24,6 +24,10 @@ impl Vector2 {
         &self.data
     }
 
+    pub fn get_x_mut(&mut self) -> &mut f32 {
+        &mut self.data.x
+    }
+
     pub fn to_nalgebra(&self) -> nalgebra::Vector2<f32> {
         self.data
     }

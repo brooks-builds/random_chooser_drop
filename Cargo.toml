@@ -14,3 +14,6 @@ serde = { version = "1.0.125", features = ["derive"] }
 rapier2d = { version = "0.8.0", features = [ "simd-stable" ] }
 nalgebra = "0.26.2"
 rand = "0.8.3"
+crossbeam = "0.8.0"
+strum = "0.20.0"
+strum_macros = "0.20.1"

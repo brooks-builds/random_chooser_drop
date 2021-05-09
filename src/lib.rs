@@ -1,12 +1,14 @@
 use core::f32;
-use std::collections::HashMap;
 
 use choices::{load_choices, Choice};
 use config::config_struct::Config;
+use crossbeam::channel::{Receiver, Sender};
 use draw_data::{DataType, DrawData};
+use event_manager::event::Event;
+use event_manager::EventManager;
 use eyre::Result;
 use ggez::event::{EventHandler, KeyCode, KeyMods};
-use ggez::graphics::{self, Color, DrawMode, DrawParam, MeshBuilder, Rect, BLACK, WHITE};
+use ggez::graphics::{self, DrawMode, DrawParam, MeshBuilder, Rect, BLACK};
 use ggez::Context;
 use helpers::vector2::Vector2;
 use physics::Physics;
@@ -14,6 +16,7 @@ use physics::Physics;
 mod choices;
 pub mod config;
 mod draw_data;
+mod event_manager;
 mod helpers;
 mod physics;
 
@@ -23,28 +26,42 @@ pub struct MainState {
     physics: Physics,
     draw_data: DrawData,
     floor_id: Option<u128>,
+    event_manager: EventManager,
+    send_events: Sender<Event>,
+    key_pressed_event: Receiver<Event>,
+    intersection_event: Receiver<Event>,
 }
 
 impl MainState {
     pub fn new(config: Config) -> Result<Self> {
+        let mut event_manager = EventManager::new();
         let choices = load_choices(&config)?;
-        let physics = Physics::new(&config);
+        let physics = Physics::new(&config, &mut event_manager);
+
+        let key_pressed_event = event_manager.subscribe("KeyPressed".to_owned());
+        let intersection_event = event_manager.subscribe("IntersectionEvent".to_owned());
 
         Ok(Self {
             config,
             choices,
             physics,
             draw_data: DrawData::new(),
+            send_events: event_manager.get_sender(),
             floor_id: None,
+            event_manager,
+            key_pressed_event,
+            intersection_event,
         })
     }
 
     pub fn setup(&mut self) {
         self.create_choice_balls();
         self.insert_floor();
-        // self.create_nails();
+        self.create_nails();
         self.create_walls();
-        self.create_left_collector();
+        self.create_collector(false);
+        self.create_collector(true);
+        self.create_winning_sensor();
     }
 
     fn create_choice_balls(&mut self) {
@@ -97,7 +114,6 @@ impl MainState {
         let mut y = self.config.floor_position_y * 2.0;
         let space_between_x = self.config.width / self.config.nails_in_row as f32;
         let space_between_y = (self.config.height - y) / self.config.rows_of_nails as f32;
-        dbg!(space_between_y);
 
         for y_count in 0..self.config.rows_of_nails {
             for x_count in 0..self.config.nails_in_row {
@@ -150,14 +166,23 @@ impl MainState {
             .insert_color(right_id, self.config.wall_color);
     }
 
-    fn create_left_collector(&mut self) {
-        let position = Vector2::new(
+    fn create_collector(&mut self, is_right: bool) {
+        let mut position = Vector2::new(
             self.config.width / 4.0,
             self.config.height - self.config.collector_offset_y,
         );
+        if is_right {
+            *position.get_x_mut() += self.config.width / 2.0 + self.config.choice_radius * 4.0;
+        } else {
+            *position.get_x_mut() -= self.config.choice_radius;
+        }
         let width = self.config.width / 2.0;
         let height = self.config.wall_width;
-        let rotation = self.config.collector_rotation;
+        let rotation = if is_right {
+            -self.config.collector_rotation
+        } else {
+            self.config.collector_rotation
+        };
         let draw_type = DataType::Collector;
         let id = self.physics.insert_rotated_wall(
             position,
@@ -166,22 +191,58 @@ impl MainState {
             rotation,
             -self.config.collector_rotation_offset,
         );
-        let draw_rect = Rect::new(
-            0.0,
-            self.config.height - self.config.collector_offset_y,
-            width + self.config.collector_rotation_offset,
-            height,
-        );
+
+        let rect_width = width + self.config.collector_rotation_offset;
+        let draw_rect = if is_right {
+            Rect::new(
+                self.config.width / 2.0 + self.config.choice_radius,
+                self.config.height + self.config.collector_offset_y * 0.5,
+                rect_width,
+                height,
+            )
+        } else {
+            Rect::new(
+                0.0 - self.config.choice_radius,
+                self.config.height - self.config.collector_offset_y,
+                rect_width,
+                height,
+            )
+        };
 
         self.draw_data.insert_rectangle(id, draw_rect);
         self.draw_data.insert_rotation(id, rotation);
         self.draw_data.insert_type(id, draw_type);
+    }
+
+    fn create_winning_sensor(&mut self) {
+        let sensor_width = self.config.width;
+        let sensor_height = self.config.choice_radius;
+        let sensor_position = Vector2::new(
+            self.config.width / 2.0,
+            self.config.height + sensor_height / 2.0,
+        );
+
+        let _id = self
+            .physics
+            .insert_sensor(sensor_position, sensor_width, sensor_height);
     }
 }
 
 impl EventHandler for MainState {
     fn update(&mut self, _context: &mut ggez::Context) -> ggez::GameResult {
         self.physics.update();
+        self.event_manager.update().unwrap();
+
+        if let Ok(Event::KeyPressed(KeyCode::Space)) = self.key_pressed_event.try_recv() {
+            self.remove_floor();
+        }
+
+        if let Ok(event) = self.intersection_event.try_recv() {
+            // We want to have a single receiver per component that will send all the events that have been subscribed to
+            if let Event::IntersectionEvent(_, _) = event {
+                dbg!("Game Over");
+            }
+        }
         Ok(())
     }
 
@@ -243,13 +304,11 @@ impl EventHandler for MainState {
 
     fn key_down_event(
         &mut self,
-        context: &mut Context,
+        _context: &mut Context,
         keycode: KeyCode,
         _keymods: KeyMods,
         _repeat: bool,
     ) {
-        if let KeyCode::Space = keycode {
-            self.remove_floor();
-        }
+        self.send_events.send(Event::KeyPressed(keycode)).unwrap();
     }
 }
