@@ -9,7 +9,6 @@ pub struct Config {
     pub vsync: bool,
     #[serde(with = "crate::helpers::serde_color")]
     pub background_color: Color,
-    pub choices_path: String,
     pub gravity: f32,
     pub choice_radius: f32,
     pub bounciness: f32,

@@ -24,10 +24,19 @@ impl EventManager {
         }
     }
 
+    #[allow(dead_code)]
     pub fn subscribe(&mut self, event_name: String) -> Receiver<Event> {
         let (sender, receiver) = crossbeam::channel::unbounded();
-        let subscribers = self.subscribers.entry(event_name).or_default();
-        subscribers.push(sender);
+        self.insert_subscriber(sender, event_name);
+        receiver
+    }
+
+    pub fn subscribe_many(&mut self, event_names: Vec<String>) -> Receiver<Event> {
+        let (sender, receiver) = crossbeam::channel::unbounded();
+        for event_name in event_names {
+            self.insert_subscriber(sender.clone(), event_name);
+        }
+
         receiver
     }
 
@@ -50,5 +59,10 @@ impl EventManager {
                 return Ok(());
             }
         }
+    }
+
+    fn insert_subscriber(&mut self, sender: Sender<Event>, event_name: String) {
+        let subscriber_list = self.subscribers.entry(event_name).or_default();
+        subscriber_list.push(sender);
     }
 }

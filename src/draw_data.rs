@@ -2,21 +2,18 @@ use std::collections::HashMap;
 
 use ggez::graphics::{Color, Rect};
 
+#[derive(Default)]
 pub struct DrawData {
     colors: HashMap<u128, Color>,
     types: HashMap<u128, DataType>,
     rectangles: HashMap<u128, Rect>,
     rotations: HashMap<u128, f32>,
+    names: HashMap<u128, String>,
 }
 
 impl DrawData {
     pub fn new() -> Self {
-        Self {
-            colors: HashMap::new(),
-            types: HashMap::new(),
-            rectangles: HashMap::new(),
-            rotations: HashMap::new(),
-        }
+        Self::default()
     }
 
     pub fn insert_color(&mut self, id: u128, color: Color) {
@@ -33,6 +30,10 @@ impl DrawData {
 
     pub fn insert_rotation(&mut self, id: u128, rotation: f32) {
         self.rotations.insert(id, rotation);
+    }
+
+    pub fn insert_name(&mut self, id: u128, name: String) {
+        self.names.insert(id, name);
     }
 
     pub fn get_color(&mut self, id: u128) -> Color {
@@ -53,6 +54,10 @@ impl DrawData {
 
     pub fn get_rotation(&self, id: u128) -> f32 {
         *self.rotations.get(&id).unwrap()
+    }
+
+    pub fn get_name(&self, id: u128) -> Option<&String> {
+        self.names.get(&id)
     }
 }
 

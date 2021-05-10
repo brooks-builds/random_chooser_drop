@@ -2,7 +2,7 @@ use nalgebra::Isometry2;
 use rapier2d::dynamics::{
     CCDSolver, IntegrationParameters, JointSet, RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
 };
-use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderSet, NarrowPhase};
+use rapier2d::geometry::{BroadPhase, ColliderBuilder, ColliderHandle, ColliderSet, NarrowPhase};
 use rapier2d::pipeline::PhysicsPipeline;
 
 use crate::config::config_struct::Config;
@@ -167,5 +167,11 @@ impl Physics {
         }
 
         None
+    }
+
+    pub fn get_id_by_collider_handle(&self, collider_handle: ColliderHandle) -> Option<u128> {
+        self.colliders
+            .get(collider_handle)
+            .map(|collider| collider.user_data)
     }
 }

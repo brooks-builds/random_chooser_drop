@@ -1,17 +1,19 @@
 use core::f32;
 
-use choices::{load_choices, Choice};
+use choices::Choice;
 use config::config_struct::Config;
 use crossbeam::channel::{Receiver, Sender};
 use draw_data::{DataType, DrawData};
 use event_manager::event::Event;
 use event_manager::EventManager;
-use eyre::Result;
+use eyre::{bail, Result};
 use ggez::event::{EventHandler, KeyCode, KeyMods};
 use ggez::graphics::{self, DrawMode, DrawParam, MeshBuilder, Rect, BLACK};
 use ggez::Context;
 use helpers::vector2::Vector2;
 use physics::Physics;
+
+use crate::choices::{load_choices_from_csv, load_choices_from_json};
 
 mod choices;
 pub mod config;
@@ -28,18 +30,25 @@ pub struct MainState {
     floor_id: Option<u128>,
     event_manager: EventManager,
     send_events: Sender<Event>,
-    key_pressed_event: Receiver<Event>,
-    intersection_event: Receiver<Event>,
+    events: Receiver<Event>,
 }
 
 impl MainState {
-    pub fn new(config: Config) -> Result<Self> {
+    pub fn new(config: Config, choices_path: String, choice_file_type: String) -> Result<Self> {
         let mut event_manager = EventManager::new();
-        let choices = load_choices(&config)?;
+        let choices = if choice_file_type.to_lowercase() == "json" {
+            load_choices_from_json(choices_path)?
+        } else if choice_file_type.to_lowercase() == "csv" {
+            load_choices_from_csv(choices_path)?
+        } else {
+            bail!("choices must be json or csv");
+        };
         let physics = Physics::new(&config, &mut event_manager);
 
-        let key_pressed_event = event_manager.subscribe("KeyPressed".to_owned());
-        let intersection_event = event_manager.subscribe("IntersectionEvent".to_owned());
+        let events = event_manager.subscribe_many(vec![
+            "KeyPressed".to_owned(),
+            "IntersectionEvent".to_owned(),
+        ]);
 
         Ok(Self {
             config,
@@ -49,8 +58,7 @@ impl MainState {
             send_events: event_manager.get_sender(),
             floor_id: None,
             event_manager,
-            key_pressed_event,
-            intersection_event,
+            events,
         })
     }
 
@@ -78,6 +86,7 @@ impl MainState {
                 .insert_ball(position, radius, self.config.bounciness);
             self.draw_data.insert_color(id, choice.color);
             self.draw_data.insert_type(id, DataType::Ball);
+            self.draw_data.insert_name(id, choice.name.clone());
         }
     }
 
@@ -233,14 +242,29 @@ impl EventHandler for MainState {
         self.physics.update();
         self.event_manager.update().unwrap();
 
-        if let Ok(Event::KeyPressed(KeyCode::Space)) = self.key_pressed_event.try_recv() {
-            self.remove_floor();
-        }
-
-        if let Ok(event) = self.intersection_event.try_recv() {
-            // We want to have a single receiver per component that will send all the events that have been subscribed to
-            if let Event::IntersectionEvent(_, _) = event {
-                dbg!("Game Over");
+        if let Ok(event) = self.events.try_recv() {
+            match event {
+                Event::KeyPressed(keycode) => {
+                    if let KeyCode::Space = keycode {
+                        self.remove_floor();
+                    }
+                }
+                Event::IntersectionEvent(collider_handle1, collider_handle2) => {
+                    let id = self
+                        .physics
+                        .get_id_by_collider_handle(collider_handle1)
+                        .unwrap();
+                    if let Some(name) = self.draw_data.get_name(id) {
+                        dbg!(name);
+                    } else {
+                        let id = self
+                            .physics
+                            .get_id_by_collider_handle(collider_handle2)
+                            .unwrap();
+                        dbg!("other collider");
+                        dbg!(self.draw_data.get_name(id).unwrap());
+                    }
+                }
             }
         }
         Ok(())
