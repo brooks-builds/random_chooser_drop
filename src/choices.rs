@@ -8,11 +8,20 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Choice {
     pub name: String,
-    #[serde(
-        with = "crate::helpers::serde_color",
-        default = "crate::helpers::serde_default_color::serde_default_color"
-    )]
-    pub color: Color,
+    #[serde(default = "default_color")]
+    pub red: u8,
+    #[serde(default = "default_color")]
+    pub green: u8,
+    #[serde(default = "default_color")]
+    pub blue: u8,
+    #[serde(default = "default_alpha")]
+    pub alpha: u8,
+}
+
+impl Choice {
+    pub fn color(&self) -> Color {
+        Color::from_rgba(self.red, self.green, self.blue, self.alpha)
+    }
 }
 
 pub fn load_choices_from_json(path: String) -> Result<Vec<Choice>> {
@@ -24,6 +33,20 @@ pub fn load_choices_from_json(path: String) -> Result<Vec<Choice>> {
     Ok(choices)
 }
 
-pub fn load_choices_from_csv(_path: String) -> Result<Vec<Choice>> {
-    Ok(vec![])
+pub fn load_choices_from_csv(path: String) -> Result<Vec<Choice>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut choices = vec![];
+    for result in reader.deserialize() {
+        let choice: Choice = result?;
+        choices.push(choice);
+    }
+    Ok(choices)
+}
+
+fn default_color() -> u8 {
+    0
+}
+
+fn default_alpha() -> u8 {
+    255
 }

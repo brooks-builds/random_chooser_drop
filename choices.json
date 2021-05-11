@@ -1,7 +1,7 @@
 [
     {
         "name": "first choice",
-        "color": [15, 200, 195]
+        "red": 255
     },
     {
         "name": "second choice"    

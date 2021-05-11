@@ -10,13 +10,16 @@
     "floor_position_y": 50.0,
     "floor_height": 5.0,
     "floor_color": [0, 0, 0],
-    "nails_in_row": 60,
-    "rows_of_nails": 20,
+    "nails_in_row": 45,
+    "rows_of_nails": 15,
     "nail_radius": 2.0,
     "nail_color": [10, 10, 10],
     "wall_width": 15.0,
     "wall_color": [0, 0, 0],
     "collector_offset_y": 25.0,
     "collector_rotation": 0.02,
-    "collector_rotation_offset": 25.0
+    "collector_rotation_offset": 25.0,
+    "winning_background_color_light": [255, 255, 255],
+    "winning_background_color_dark": [0, 0, 0],
+    "winning_background_color_alpha": 0.2
 }

@@ -27,4 +27,9 @@ pub struct Config {
     pub collector_offset_y: f32,
     pub collector_rotation: f32,
     pub collector_rotation_offset: f32,
+    #[serde(with = "crate::helpers::serde_color")]
+    pub winning_background_color_light: Color,
+    #[serde(with = "crate::helpers::serde_color")]
+    pub winning_background_color_dark: Color,
+    pub winning_background_color_alpha: f32,
 }

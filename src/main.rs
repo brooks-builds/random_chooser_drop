@@ -16,7 +16,6 @@ fn main() -> Result<()> {
     let choices_path = arguments
         .opt_value_from_str("--choices")?
         .unwrap_or_else(|| DEFAULT_CHOICES_PATH.to_owned());
-
     let choice_file_type = arguments
         .opt_value_from_str("--file-type")?
         .unwrap_or_else(|| DEFAULT_CHOICE_FILE_TYPE.to_owned());

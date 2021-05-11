@@ -8,8 +8,11 @@ use event_manager::event::Event;
 use event_manager::EventManager;
 use eyre::{bail, Result};
 use ggez::event::{EventHandler, KeyCode, KeyMods};
-use ggez::graphics::{self, DrawMode, DrawParam, MeshBuilder, Rect, BLACK};
-use ggez::Context;
+use ggez::graphics::{
+    self, Color, DrawMode, DrawParam, Font, MeshBuilder, Rect, Scale, Text, BLACK,
+};
+use ggez::{timer, Context};
+use helpers::is_dark_color::is_dark_color;
 use helpers::vector2::Vector2;
 use physics::Physics;
 
@@ -31,6 +34,7 @@ pub struct MainState {
     event_manager: EventManager,
     send_events: Sender<Event>,
     events: Receiver<Event>,
+    winner: Option<(Text, Color)>,
 }
 
 impl MainState {
@@ -59,6 +63,7 @@ impl MainState {
             floor_id: None,
             event_manager,
             events,
+            winner: None,
         })
     }
 
@@ -84,7 +89,7 @@ impl MainState {
             let id = self
                 .physics
                 .insert_ball(position, radius, self.config.bounciness);
-            self.draw_data.insert_color(id, choice.color);
+            self.draw_data.insert_color(id, choice.color());
             self.draw_data.insert_type(id, DataType::Ball);
             self.draw_data.insert_name(id, choice.name.clone());
         }
@@ -238,31 +243,46 @@ impl MainState {
 }
 
 impl EventHandler for MainState {
-    fn update(&mut self, _context: &mut ggez::Context) -> ggez::GameResult {
-        self.physics.update();
-        self.event_manager.update().unwrap();
+    fn update(&mut self, context: &mut ggez::Context) -> ggez::GameResult {
+        while timer::check_update_time(context, 60) {
+            self.physics.update();
+            self.event_manager.update().unwrap();
 
-        if let Ok(event) = self.events.try_recv() {
-            match event {
-                Event::KeyPressed(keycode) => {
-                    if let KeyCode::Space = keycode {
-                        self.remove_floor();
+            if let Ok(event) = self.events.try_recv() {
+                match event {
+                    Event::KeyPressed(keycode) => {
+                        if let KeyCode::Space = keycode {
+                            self.remove_floor();
+                        }
                     }
-                }
-                Event::IntersectionEvent(collider_handle1, collider_handle2) => {
-                    let id = self
-                        .physics
-                        .get_id_by_collider_handle(collider_handle1)
-                        .unwrap();
-                    if let Some(name) = self.draw_data.get_name(id) {
-                        dbg!(name);
-                    } else {
+                    Event::IntersectionEvent(collider_handle1, collider_handle2) => {
+                        if let Some(_) = self.winner {
+                            continue;
+                        }
+
                         let id = self
                             .physics
-                            .get_id_by_collider_handle(collider_handle2)
+                            .get_id_by_collider_handle(collider_handle1)
                             .unwrap();
-                        dbg!("other collider");
-                        dbg!(self.draw_data.get_name(id).unwrap());
+                        let winner = if let Some(name) = self.draw_data.get_name(id) {
+                            (
+                                helpers::create_winner_text::create_winner_text(context, name),
+                                self.draw_data.get_color(id),
+                            )
+                        } else {
+                            let id = self
+                                .physics
+                                .get_id_by_collider_handle(collider_handle2)
+                                .unwrap();
+                            (
+                                helpers::create_winner_text::create_winner_text(
+                                    context,
+                                    self.draw_data.get_name(id).unwrap(),
+                                ),
+                                self.draw_data.get_color(id),
+                            )
+                        };
+                        self.winner = Some(winner);
                     }
                 }
             }
@@ -323,6 +343,35 @@ impl EventHandler for MainState {
 
         let mesh = mesh_builder.build(context)?;
         graphics::draw(context, &mesh, DrawParam::new())?;
+        if let Some((winner, color)) = &self.winner {
+            let (width, height) = graphics::drawable_size(context);
+            let (winner_width, winner_height) = winner.dimensions(context);
+            let mut background_color = if is_dark_color(color) {
+                self.config.winning_background_color_light
+            } else {
+                self.config.winning_background_color_dark
+            };
+            background_color.a = self.config.winning_background_color_alpha;
+
+            let background_mesh = MeshBuilder::new()
+                .rectangle(
+                    DrawMode::fill(),
+                    Rect::new(0.0, 0.0, width, height),
+                    background_color,
+                )
+                .build(context)?;
+            graphics::draw(context, &background_mesh, DrawParam::new())?;
+            graphics::draw(
+                context,
+                winner,
+                DrawParam::new()
+                    .dest([
+                        width / 2.0 - winner_width as f32 / 2.0,
+                        height / 2.0 - winner_height as f32 / 2.0,
+                    ])
+                    .color(*color),
+            )?;
+        }
         graphics::present(context)
     }
 
