@@ -32,4 +32,10 @@ pub struct Config {
     #[serde(with = "crate::helpers::serde_color")]
     pub winning_background_color_dark: Color,
     pub winning_background_color_alpha: f32,
+    #[serde(default = "default_use_stdin")]
+    pub use_stdin: bool,
+}
+
+fn default_use_stdin() -> bool {
+    false
 }

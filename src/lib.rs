@@ -16,7 +16,7 @@ use helpers::is_dark_color::is_dark_color;
 use helpers::vector2::Vector2;
 use physics::Physics;
 
-use crate::choices::{load_choices_from_csv, load_choices_from_json};
+use crate::choices::{load_choices_from_csv, load_choices_from_json, load_choices_from_stdin};
 
 mod choices;
 pub mod config;
@@ -40,7 +40,9 @@ pub struct MainState {
 impl MainState {
     pub fn new(config: Config, choices_path: String, choice_file_type: String) -> Result<Self> {
         let mut event_manager = EventManager::new();
-        let choices = if choice_file_type.to_lowercase() == "json" {
+        let choices = if config.use_stdin {
+            load_choices_from_stdin()?
+        } else if choice_file_type.to_lowercase() == "json" {
             load_choices_from_json(choices_path)?
         } else if choice_file_type.to_lowercase() == "csv" {
             load_choices_from_csv(choices_path)?

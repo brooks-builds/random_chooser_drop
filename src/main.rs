@@ -1,5 +1,5 @@
 use eyre::Result;
-use ggez::conf::{WindowMode, WindowSetup};
+use ggez::conf::{self, WindowMode, WindowSetup};
 use ggez::{event, ContextBuilder};
 use random_chooser_drop::config::load_config;
 use random_chooser_drop::MainState;
@@ -20,7 +20,8 @@ fn main() -> Result<()> {
         .opt_value_from_str("--file-type")?
         .unwrap_or_else(|| DEFAULT_CHOICE_FILE_TYPE.to_owned());
 
-    let config = load_config(config_path)?;
+    let mut config = load_config(config_path)?;
+    config.use_stdin = arguments.contains(["-s", "--stdin"]);
     let window_mode = WindowMode::default().dimensions(config.width, config.height);
     let window_setup = WindowSetup::default()
         .title(&config.title)

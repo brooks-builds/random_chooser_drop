@@ -5,6 +5,8 @@ use eyre::Result;
 use ggez::graphics::Color;
 use serde::{Deserialize, Serialize};
 
+use crate::helpers::serde_color;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Choice {
     pub name: String,
@@ -41,6 +43,12 @@ pub fn load_choices_from_csv(path: String) -> Result<Vec<Choice>> {
         choices.push(choice);
     }
     Ok(choices)
+}
+
+pub fn load_choices_from_stdin() -> Result<Vec<Choice>> {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input)?;
+    Ok(serde_json::from_str(&input)?)
 }
 
 fn default_color() -> u8 {
